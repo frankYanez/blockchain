@@ -1,23 +1,162 @@
 :root {
   font-family: system-ui, sans-serif;
   color-scheme: light dark;
+  --bg: #fff7fb;
+  --surface: #ffffff;
+  --text: #2b1d2e;
+  --muted: #7a6a7d;
+  --border: #f1d7e4;
+  --accent: #e64980;
+  --accent-text: #ffffff;
+  --success: #2f9e44;
+  --warning: #f08c00;
+  --error: #e03131;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1320;
+    --surface: #251b2d;
+    --text: #f5eaf2;
+    --muted: #b3a3b8;
+    --border: #3a2c44;
+  }
 }
 
 body {
   margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+a {
+  color: var(--accent);
 }
 
 .app {
-  max-width: 960px;
+  max-width: 1040px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 24px 16px 48px;
 }
 
 .app-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+  margin-bottom: 24px;
+}
+
+.app-header h1 {
+  margin: 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.banner,
+.status {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 0 0 16px;
+}
+
+.banner-warning,
+.status-signing,
+.status-confirming {
+  border-color: var(--warning);
+}
+
+.banner-error,
+.status-rejected,
+.status-failed {
+  border-color: var(--error);
+}
+
+.status-confirmed {
+  border-color: var(--success);
+}
+
+.status p {
+  margin: 4px 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-image {
+  width: 100%;
+  aspect-ratio: 1;
+  display: block;
+}
+
+.card-body {
+  padding: 12px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.card-body h3 {
+  margin: 0 0 4px;
+}
+
+.card-body p {
+  margin: 0 0 12px;
+  flex: 1;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.price {
+  font-weight: 700;
+}
+
+.button {
+  background: var(--accent);
+  color: var(--accent-text);
+  border: 0;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.button-success {
+  background: var(--success);
+}
+
+.footer {
+  margin-top: 32px;
+  font-size: 0.875rem;
 }
 
 code {

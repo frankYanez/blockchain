@@ -1,18 +1,32 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { useAccount, useReadContract, useSwitchChain } from 'wagmi'
+import { baseSepolia } from 'wagmi/chains'
+import { formatUnits, parseUnits } from 'viem'
 import {
-  useAccount,
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-} from 'wagmi'
-import { formatUnits, parseUnits, isAddress } from 'viem'
-import { USDC_ADDRESS, USDC_DECIMALS, usdcAbi } from './usdc.js'
+  EXPLORER_URL,
+  MERCHANT_ADDRESS,
+  USDC_ADDRESS,
+  USDC_DECIMALS,
+  usdcAbi,
+} from './usdc.js'
+import { products } from './products.js'
+import { usePurchase } from './usePurchase.js'
+import { ProductCard } from './ProductCard.jsx'
+
+const STATUS_TEXT = {
+  signing: 'Confirm the payment in your wallet...',
+  confirming: 'Transaction sent. Waiting for it to be mined...',
+  confirmed: 'Payment verified on-chain. Your download is unlocked!',
+  rejected: 'The wallet did not send the transaction.',
+  failed: 'Payment could not be verified.',
+}
 
 function App() {
-  const { address, isConnected, chain } = useAccount()
-  const [to, setTo] = useState('')
-  const [amount, setAmount] = useState('')
+  const { address, isConnected, chainId } = useAccount()
+  const { switchChain, isPending: isSwitching } = useSwitchChain()
+  const purchase = usePurchase()
+  const onRightChain = chainId === baseSepolia.id
 
   // READ: free, no signature, no gas
   const { data: balance, refetch: refetchBalance } = useReadContract({
@@ -20,73 +34,99 @@ function App() {
     abi: usdcAbi,
     functionName: 'balanceOf',
     args: [address],
+    chainId: baseSepolia.id,
     query: { enabled: Boolean(address) },
   })
 
-  // WRITE: wallet asks the user to sign, costs gas (ETH)
-  const { data: txHash, writeContract, isPending, error } = useWriteContract()
-
-  // Wait until the transaction is mined into a block
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({ hash: txHash })
-
   useEffect(() => {
-    if (isConfirmed) refetchBalance()
-  }, [isConfirmed, refetchBalance])
+    if (purchase.status === 'confirmed') refetchBalance()
+  }, [purchase.status, refetchBalance])
 
-  function handlePay(event) {
-    event.preventDefault()
-    writeContract({
-      address: USDC_ADDRESS,
-      abi: usdcAbi,
-      functionName: 'transfer',
-      args: [to, parseUnits(amount, USDC_DECIMALS)],
-    })
+  function blockReason(product) {
+    if (!MERCHANT_ADDRESS) return 'Store wallet is not configured'
+    if (!isConnected) return 'Connect your wallet first'
+    if (!onRightChain) return 'Switch to Base Sepolia'
+    if (purchase.busy) return 'Another payment is in progress'
+    if (balance === undefined) return 'Loading balance...'
+    if (balance < parseUnits(product.price, USDC_DECIMALS)) return 'Not enough USDC'
+    return null
   }
-
-  const canPay = isAddress(to) && Number(amount) > 0 && !isPending && !isConfirming
 
   return (
     <main className="app">
       <header className="app-header">
-        <h1>Tienda USDC</h1>
+        <div>
+          <h1>Kirby Store</h1>
+          <p className="muted">Digital art paid with USDC on Base Sepolia</p>
+        </div>
         <ConnectButton />
       </header>
 
-      {isConnected ? (
-        <section>
-          <p>Connected address: <code>{address}</code></p>
-          <p>Network: {chain ? `${chain.name} (${chain.id})` : 'Unsupported network'}</p>
-          <p>
-            USDC balance:{' '}
+      {!MERCHANT_ADDRESS && (
+        <p className="banner banner-error">
+          VITE_MERCHANT_ADDRESS is missing. Purchases are disabled.
+        </p>
+      )}
+
+      {isConnected && !onRightChain && (
+        <p className="banner banner-warning">
+          Wrong network.{' '}
+          <button
+            className="button"
+            disabled={isSwitching}
+            onClick={() => switchChain({ chainId: baseSepolia.id })}
+          >
+            Switch to Base Sepolia
+          </button>
+        </p>
+      )}
+
+      {isConnected && onRightChain && (
+        <p className="banner">
+          USDC balance:{' '}
+          <strong>
             {balance !== undefined ? formatUnits(balance, USDC_DECIMALS) : 'Loading...'}
-          </p>
+          </strong>
+          {' · '}
+          <a href="https://faucet.circle.com" target="_blank" rel="noreferrer">
+            Get test USDC
+          </a>
+        </p>
+      )}
 
-          <form onSubmit={handlePay}>
-            <input
-              placeholder="Recipient address (0x...)"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-            />
-            <input
-              placeholder="Amount in USDC"
-              type="number"
-              min="0"
-              step="0.000001"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-            <button type="submit" disabled={!canPay}>
-              {isPending ? 'Confirm in wallet...' : isConfirming ? 'Confirming...' : 'Pay'}
-            </button>
-          </form>
-
-          {txHash && <p>Transaction: <code>{txHash}</code></p>}
-          {isConfirmed && <p>Payment confirmed.</p>}
-          {error && <p>Error: {error.shortMessage ?? error.message}</p>}
+      {purchase.status !== 'idle' && (
+        <section className={`status status-${purchase.status}`} aria-live="polite">
+          <strong>{purchase.product?.name}</strong>
+          <p>{STATUS_TEXT[purchase.status]}</p>
+          {purchase.error && <p className="muted">{purchase.error}</p>}
+          {purchase.hash && (
+            <a href={`${EXPLORER_URL}/tx/${purchase.hash}`} target="_blank" rel="noreferrer">
+              View transaction on BaseScan
+            </a>
+          )}
         </section>
-      ) : (
-        <p>Connect your wallet to start.</p>
+      )}
+
+      <section className="grid">
+        {products.map((product) => {
+          const reason = blockReason(product)
+          return (
+            <ProductCard
+              key={product.id}
+              product={product}
+              purchased={Boolean(purchase.purchases[product.id])}
+              disabled={Boolean(reason)}
+              disabledReason={reason ?? undefined}
+              onBuy={purchase.buy}
+            />
+          )
+        })}
+      </section>
+
+      {MERCHANT_ADDRESS && (
+        <footer className="muted footer">
+          Payments go to <code>{MERCHANT_ADDRESS}</code>
+        </footer>
       )}
     </main>
   )
