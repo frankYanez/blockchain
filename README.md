@@ -4,7 +4,8 @@ Tienda web en React que vende imágenes digitales de Kirby y cobra en **USDC** s
 **Base Sepolia** (testnet). El usuario conecta su wallet, paga un producto, la app sigue el
 estado de la transacción y solo desbloquea la descarga cuando el pago está **verificado on-chain**.
 
-- Demo: _link de Vercel_
+- Demo: https://tienda-usdc.vercel.app
+- Repo: https://github.com/frankYanez/tienda-usdc
 - Red: Base Sepolia (chain ID `84532`)
 - Contrato USDC (Circle): [`0x036CbD53842c5426634e7929541eC2318f3dCF7e`](https://sepolia.basescan.org/token/0x036CbD53842c5426634e7929541eC2318f3dCF7e)
 
