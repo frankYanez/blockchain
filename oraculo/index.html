@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Precios desde Chainlink</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #0d1117;
+            color: #e6edf3;
+            font-family: system-ui, sans-serif;
+        }
+
+        main {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 40px 16px 64px;
+        }
+
+        /* ---------- Precios ---------- */
+        .prices {
+            max-width: 420px;
+            margin: 0 auto 56px;
+        }
+
+        h1 {
+            font-size: 22px;
+            margin: 0 0 4px;
+        }
+
+        .sub {
+            color: #8b98a5;
+            font-size: 14px;
+            margin: 0 0 24px;
+        }
+
+        .price {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            background: #161b22;
+            border: 1px solid #262c36;
+            border-radius: 10px;
+        }
+
+        .price span {
+            color: #8b98a5;
+        }
+
+        .price b {
+            font-family: ui-monospace, monospace;
+            font-weight: 500;
+        }
+
+        button.main {
+            width: 100%;
+            margin-top: 16px;
+            padding: 12px;
+            font-size: 15px;
+            border: 0;
+            border-radius: 10px;
+            background: #375bd2;
+            color: white;
+            cursor: pointer;
+        }
+
+        button.main.on {
+            background: #b62324;
+        }
+
+        .status {
+            color: #8b98a5;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        /* ---------- Sección de código ---------- */
+        h2 {
+            font-size: 20px;
+            margin: 0 0 6px;
+        }
+
+        .section-sub {
+            color: #8b98a5;
+            font-size: 14px;
+            margin: 0 0 24px;
+            line-height: 1.5;
+        }
+
+        .term {
+            background: #0a0d12;
+            border: 1px solid #262c36;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .term-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: #161b22;
+            border-bottom: 1px solid #262c36;
+        }
+
+        .dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .dots i {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            display: block;
+        }
+
+        .dots i:nth-child(1) {
+            background: #ff5f57;
+        }
+
+        .dots i:nth-child(2) {
+            background: #febc2e;
+        }
+
+        .dots i:nth-child(3) {
+            background: #28c840;
+        }
+
+        .term-title {
+            font-family: ui-monospace, monospace;
+            font-size: 12px;
+            color: #8b98a5;
+            margin-left: 6px;
+        }
+
+        .copy {
+            margin-left: auto;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: transparent;
+            color: #8b98a5;
+            border: 1px solid #30363d;
+            cursor: pointer;
+        }
+
+        .copy:hover {
+            color: #e6edf3;
+        }
+
+        pre {
+            margin: 0;
+            padding: 14px 0;
+            overflow-x: auto;
+            font-family: ui-monospace, "SF Mono", Menlo, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            counter-reset: line;
+        }
+
+        pre .ln {
+            display: block;
+            padding: 0 16px 0 0;
+            white-space: pre;
+        }
+
+        pre .ln::before {
+            counter-increment: line;
+            content: counter(line);
+            display: inline-block;
+            width: 40px;
+            padding-right: 16px;
+            text-align: right;
+            color: #3d444d;
+            user-select: none;
+        }
+
+        /* Colores del resaltado de sintaxis */
+        .c {
+            color: #6a7480;
+            font-style: italic;
+        }
+
+        /* comentarios */
+        .s {
+            color: #a5d6ff;
+        }
+
+        /* strings */
+        .k {
+            color: #ff7b72;
+        }
+
+        /* palabras clave */
+        .n {
+            color: #79c0ff;
+        }
+
+        /* números */
+
+        /* Consola en vivo */
+        .console {
+            padding: 14px 16px;
+            height: 260px;
+            overflow-y: auto;
+            font-family: ui-monospace, monospace;
+            font-size: 12.5px;
+            line-height: 1.7;
+        }
+
+        .console .t {
+            color: #3d444d;
+            margin-right: 8px;
+        }
+
+        .console .out {
+            color: #8b98a5;
+        }
+
+        .console .in {
+            color: #3fb950;
+        }
+
+        .console .err {
+            color: #f85149;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+
+        <!-- ======================= PRECIOS ======================= -->
+        <section class="prices">
+            <h1>Precios desde el oráculo</h1>
+            <p class="sub">Chainlink Data Feeds · Ethereum mainnet</p>
+
+            <div class="price"><span>BTC/USD</span><b id="BTC/USD">—</b></div>
+            <div class="price"><span>ETH/USD</span><b id="ETH/USD">—</b></div>
+            <div class="price"><span>USDT/USD</span><b id="USDT/USD">—</b></div>
+            <div class="price"><span>BTC/USDT</span><b id="BTC/USDT">—</b></div>
+
+            <button class="main" id="toggle">Activar refresco automático</button>
+            <p class="status" id="status">Cargando…</p>
+        </section>
+
+        <!-- ======================= CÓDIGO ======================= -->
+        <section>
+            <h2>Cómo funciona por dentro</h2>
+            <p class="section-sub">
+                Este es el código que está corriendo en esta misma página, separado por partes.
+                Abajo, la consola muestra en vivo cada petición que se le hace al nodo de Ethereum.
+            </p>
+
+            <!-- Las terminales de código se generan desde el script -->
+            <div id="terminals"></div>
+
+            <!-- Consola en vivo -->
+            <div class="term">
+                <div class="term-bar">
+                    <span class="dots"><i></i><i></i><i></i></span>
+                    <span class="term-title">consola — peticiones JSON-RPC en vivo</span>
+                    <button class="copy" id="clear">Limpiar</button>
+                </div>
+                <div class="console" id="console"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Ábrelo con Live Server o "npx serve" (no con doble clic) -->
+    <script type="module">
+        // Las partes marcadas con "@section" son las que se muestran en las
+        // terminales de la página. El resto es solo la lógica de visualización.
+
+        // @section imports.js — Librería viem
+        // viem desde un CDN (en el navegador no hay npm)
+        import { createPublicClient, http, formatUnits } from "https://esm.sh/viem@2";
+        // @end
+
+        // @section config.js — RPC y direcciones de los oráculos
+        const RPC_URL = "https://ethereum-rpc.publicnode.com";
+        const REFRESH_SECONDS = 15;
+
+        // Direcciones de los contratos proxy de Chainlink en Ethereum mainnet
+        const FEEDS = [
+            { label: "BTC/USD", address: "0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c", decimalsToShow: 2 },
+            { label: "ETH/USD", address: "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419", decimalsToShow: 2 },
+            { label: "USDT/USD", address: "0x3E7d1eAB13ad0104d2750B8863b489D65364e32D", decimalsToShow: 4 },
+        ];
+        // @end
+
+        // @section abi.js — Las funciones del contrato que vamos a llamar
+        // ABI mínimo: solo las 2 funciones que usamos
+        const FEED_ABI = [
+            {
+                type: "function", name: "decimals", stateMutability: "view", inputs: [],
+                outputs: [{ type: "uint8" }]
+            },
+            {
+                type: "function", name: "latestRoundData", stateMutability: "view", inputs: [],
+                outputs: [
+                    { name: "roundId", type: "uint80" },
+                    { name: "answer", type: "int256" },
+                    { name: "startedAt", type: "uint256" },
+                    { name: "updatedAt", type: "uint256" },
+                    { name: "answeredInRound", type: "uint80" },
+                ]
+            },
+        ];
+        // @end
+
+        // @section client.js — Conexión con Ethereum y lectura de un feed
+        // Cliente de solo lectura conectado al RPC.
+        // onFetchRequest solo sirve para mostrar las peticiones en la consola de esta página.
+        const client = createPublicClient({
+            transport: http(RPC_URL, { onFetchRequest: logRequest }),
+        });
+
+        async function readFeed(feed) {
+            const [decimals, [, answer]] = await Promise.all([
+                client.readContract({ address: feed.address, abi: FEED_ABI, functionName: "decimals" }),
+                client.readContract({ address: feed.address, abi: FEED_ABI, functionName: "latestRoundData" }),
+            ]);
+            // answer viene sin coma → formatUnits la pone según los decimales
+            return Number(formatUnits(answer, decimals));
+        }
+        // @end
+
+        // @section prices.js — Leer todo, calcular BTC/USDT y mostrarlo
+        const format = (value, decimals) =>
+            value.toLocaleString("es-CO", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+
+        async function loadPrices() {
+            try {
+                // Los 3 feeds en paralelo
+                const prices = await Promise.all(FEEDS.map(readFeed));
+
+                FEEDS.forEach((feed, i) => {
+                    document.getElementById(feed.label).textContent = "$" + format(prices[i], feed.decimalsToShow);
+                    log("in", `← ${feed.label} = $${format(prices[i], feed.decimalsToShow)}`);
+                });
+
+                // BTC/USDT no existe como feed: se calcula BTC/USD ÷ USDT/USD (off-chain)
+                const btcUsdt = prices[0] / prices[2];
+                document.getElementById("BTC/USDT").textContent = format(btcUsdt, 2) + " USDT";
+                log("in", `= BTC/USDT = ${format(btcUsdt, 2)} USDT (calculado en esta página)`);
+
+                const time = new Date().toLocaleTimeString("es-CO", { timeZone: "America/Bogota" });
+                document.getElementById("status").textContent = "Última lectura: " + time;
+            } catch (error) {
+                const message = error.shortMessage ?? error.message;
+                document.getElementById("status").textContent = "Error: " + message;
+                log("err", "✕ " + message);
+            }
+        }
+        // @end
+
+        // @section button.js — Refresco automático
+        let timer = null; // guarda el intervalo activo (null = apagado)
+        const button = document.getElementById("toggle");
+
+        button.addEventListener("click", () => {
+            if (timer) {
+                // Estaba prendido → lo apagamos
+                clearInterval(timer);
+                timer = null;
+                button.textContent = "Activar refresco automático";
+                button.classList.remove("on");
+            } else {
+                // Estaba apagado → leemos ya y luego cada REFRESH_SECONDS
+                loadPrices();
+                timer = setInterval(loadPrices, REFRESH_SECONDS * 1000);
+                button.textContent = `Detener (cada ${REFRESH_SECONDS} s)`;
+                button.classList.add("on");
+            }
+        });
+        // @end
+
+
+        // =====================================================================
+        // LÓGICA DE VISUALIZACIÓN (no se muestra en las terminales)
+        // =====================================================================
+
+        // ---------- Consola en vivo ----------
+        const consoleEl = document.getElementById("console");
+
+        function log(type, text) {
+            const time = new Date().toLocaleTimeString("es-CO", { timeZone: "America/Bogota" });
+            const line = document.createElement("div");
+            line.innerHTML = `<span class="t">${time}</span><span class="${type}"></span>`;
+            line.lastChild.textContent = text;
+            consoleEl.appendChild(line);
+            while (consoleEl.children.length > 80) consoleEl.firstChild.remove();
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        document.getElementById("clear").addEventListener("click", () => (consoleEl.innerHTML = ""));
+
+        // Traduce los códigos de 4 bytes a nombres de función legibles
+        const SELECTORS = { "0x313ce567": "decimals()", "0xfeaf968c": "latestRoundData()" };
+
+        // Se ejecuta antes de cada petición HTTP al RPC: muestra qué se envía.
+        // Se declara con "function" para que exista antes de crear el cliente (hoisting).
+        async function logRequest(request, init) {
+            try {
+                const raw = typeof init?.body === "string" ? init.body : await request.clone().text();
+                const body = JSON.parse(raw);
+                for (const call of [].concat(body)) {
+                    if (call.method === "eth_call") {
+                        const { to, data } = call.params[0];
+                        const feed = FEEDS.find((f) => f.address.toLowerCase() === to.toLowerCase());
+                        const selector = data.slice(0, 10);
+                        log("out", `→ eth_call  ${feed?.label ?? to}  data: ${selector}  (${SELECTORS[selector] ?? "?"})`);
+                    } else {
+                        log("out", `→ ${call.method}`);
+                    }
+                }
+            } catch {
+                // Si no se puede leer la petición, no pasa nada: es solo para mostrar.
+            }
+        }
+
+        // ---------- Terminales de código ----------
+        // Lee el texto de ESTE script y extrae los bloques @section ... @end.
+        // Así lo que se muestra siempre es exactamente lo que se ejecuta.
+        const source = document.querySelector('script[type="module"]').textContent;
+        const sections = [...source.matchAll(/\/\/ @section (.+)\n([\s\S]*?)\/\/ @end/g)]
+            .map(([, title, code]) => ({ title, code: code.replace(/\s+$/, "") }));
+
+        const escapeHtml = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+        // Resaltado de sintaxis sencillo: comentarios, strings, palabras clave y números
+        function highlight(line) {
+            const pattern = /(\/\/.*$)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|\b(const|let|async|await|function|return|import|from|if|else|try|catch|null|new)\b|\b(\d+)\b/g;
+            return escapeHtml(line).replace(pattern, (m, comment, string, keyword, number) => {
+                if (comment) return `<span class="c">${comment}</span>`;
+                if (string) return `<span class="s">${string}</span>`;
+                if (keyword) return `<span class="k">${keyword}</span>`;
+                return `<span class="n">${number}</span>`;
+            });
+        }
+
+        const container = document.getElementById("terminals");
+        sections.forEach(({ title, code }, i) => {
+            const term = document.createElement("div");
+            term.className = "term";
+            term.innerHTML = `
+    <div class="term-bar">
+      <span class="dots"><i></i><i></i><i></i></span>
+      <span class="term-title"></span>
+      <button class="copy">Copiar</button>
+    </div>
+    <pre>${code.split("\n").map((l) => `<span class="ln">${highlight(l) || " "}</span>`).join("")}</pre>`;
+            term.querySelector(".term-title").textContent = `${i + 1}. ${title}`;
+
+            const copyBtn = term.querySelector(".copy");
+            copyBtn.addEventListener("click", async () => {
+                try {
+                    await navigator.clipboard.writeText(code);
+                    copyBtn.textContent = "Copiado ✓";
+                } catch {
+                    copyBtn.textContent = "No se pudo copiar";
+                }
+                setTimeout(() => (copyBtn.textContent = "Copiar"), 1500);
+            });
+            container.appendChild(term);
+        });
+
+        // ---------- Arranque ----------
+        // Primera lectura al abrir la página. Va al final para que la consola
+        // y las terminales ya existan cuando lleguen las primeras peticiones.
+        loadPrices();
+    </script>
+</body>
+
+</html>
